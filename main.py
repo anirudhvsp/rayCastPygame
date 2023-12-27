@@ -4,6 +4,7 @@ from renderUtils import draw_walls, draw_minimap, is_collision
 from constants import SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_SPEED, ROTATION_SPEED, MOUSE_SENS,  BLACK, WHITE
 from gameState import GameState
 from inputHandler import InputHandler
+import asyncio
 
 # Initialize Pygame
 pygame.init()
@@ -14,7 +15,7 @@ clock = pygame.time.Clock()
 
 game_state = GameState()
 
-def main():
+async def main():
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
     font = pygame.font.Font(None, 15)
@@ -36,22 +37,12 @@ def main():
         draw_walls(game_state)
         draw_minimap(game_state)
 
-        fps = int(clock.get_fps())
-        fps_text = font.render(f"FPS: {fps}", True, WHITE)
-        
-        # Adjust the position to the top right corner
-        fps_position = (SCREEN_WIDTH - fps_text.get_width() - 10, 10)
-        
-        game_state.screen.blit(fps_text, fps_position)
-
 
         # Update the display
-        pygame.display.flip()
+        pygame.display.update()
+        await asyncio.sleep(0)  # Very important, and keep it 0
 
-        # Cap the frame rate
-        clock.tick(60)
+        if not running:
+            return
 
-    pygame.quit()
-
-if __name__ == "__main__":
-    main()
+asyncio.run( main() )
