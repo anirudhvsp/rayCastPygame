@@ -1,6 +1,6 @@
 import pygame
 import math
-from renderUtils import draw_walls, draw_minimap, is_collision
+from renderUtils import *
 from constants import SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_SPEED, ROTATION_SPEED, MOUSE_SENS,  BLACK, WHITE
 from gameState import GameState
 from inputHandler import InputHandler
@@ -15,7 +15,7 @@ clock = pygame.time.Clock()
 
 game_state = GameState()
 
-async def main():
+def main():
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
     font = pygame.font.Font(None, 15)
@@ -36,13 +36,14 @@ async def main():
         # Draw walls
         draw_walls(game_state)
         draw_minimap(game_state)
-
+        draw_crosshair(game_state)
 
         # Update the display
         pygame.display.update()
-        await asyncio.sleep(0)  # Very important, and keep it 0
-
+        #await asyncio.sleep(0)  # Very important, and keep it 0
+        clock.tick(120)
         if not running:
             return
 
-asyncio.run( main() )
+if __name__ == "__main__":
+    main()

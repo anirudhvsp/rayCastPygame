@@ -9,6 +9,7 @@ class GameState:
         self.game_map = []
         self.camera_shake = 0.0
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
+        self.viewOffset = 0.0
+        self.RENDER_QUALITY = 5
         # Convert room layout to integers
         self.game_map = roomLayout.ROOM1

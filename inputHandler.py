@@ -1,5 +1,5 @@
 import pygame
-from constants import MOUSE_SENS, PLAYER_SPEED, ROTATION_SPEED, SPRINT_SPEED
+from constants import *
 from renderUtils import is_collision
 import random
 import math
@@ -27,9 +27,19 @@ class InputHandler:
             self.sprinting = True
         else:
             self.sprinting = False
+        if keys[pygame.K_UP]:
+            self.lookUp(game_state)
+        if keys[pygame.K_DOWN]:
+            self.lookDown(game_state)
+        if keys[pygame.K_q]:
+            self.increaseRenderQuality(game_state)
+        if keys[pygame.K_e]:
+            self.decreaseRenderQuality(game_state)
+
+        
         dx, dy = pygame.mouse.get_rel()
         dx *= MOUSE_SENS
-        dy *= MOUSE_SENS
+        dy *= MOUSE_SENS * 500
         self.rotate_mouse(game_state, dx, dy)
 
             
@@ -87,6 +97,7 @@ class InputHandler:
         ]
 
     def rotate_mouse(self, game_state, dx, dy):
+        # Rotate based on the x movement
         game_state.player_dir = [
             game_state.player_dir[0] * math.cos(-dx) - game_state.player_dir[1] * math.sin(-dx),
             game_state.player_dir[0] * math.sin(-dx) + game_state.player_dir[1] * math.cos(-dx),
@@ -97,3 +108,21 @@ class InputHandler:
             game_state.player_plane[0] * math.sin(-dx) + game_state.player_plane[1] * math.cos(-dx),
         ]
 
+        # Look up and down based on the y movement
+        game_state.viewOffset += dy
+        game_state.viewOffset = max(-VERTICAL_CLAMP, min(VERTICAL_CLAMP, game_state.viewOffset))  # Clamp between -60.0 and 60.0
+    
+    def lookUp(self, game_state):
+        game_state.viewOffset += 1
+        game_state.viewOffset = min(VERTICAL_CLAMP, game_state.viewOffset)  # Clamp to 60.0
+    
+    def lookDown(self, game_state):
+        game_state.viewOffset -= 1
+        game_state.viewOffset = max(-VERTICAL_CLAMP, game_state.viewOffset)  # Clamp to -60.0
+
+    def increaseRenderQuality(self, game_state):
+        game_state.RENDER_QUALITY += 0.5
+        game_state.RENDER_QUALITY = min(50, game_state.RENDER_QUALITY)
+    def decreaseRenderQuality(self, game_state):
+        game_state.RENDER_QUALITY -= 0.5
+        game_state.RENDER_QUALITY = max(1, game_state.RENDER_QUALITY)

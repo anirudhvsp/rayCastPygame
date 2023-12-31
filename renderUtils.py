@@ -60,7 +60,9 @@ def cast_ray(ray_angle, game_state):
 
 
 def draw_walls(game_state):
-    for x in range(SCREEN_WIDTH):
+    wall_width = int(game_state.RENDER_QUALITY) # Width of the wall rectangles
+
+    for x in range(0, SCREEN_WIDTH, wall_width):
         # Calculate ray angle for each column
         camera_x = 2 * x / SCREEN_WIDTH - 1  # Normalize x-coordinate
         ray_dir_x = game_state.player_dir[0] + game_state.player_plane[0] * camera_x
@@ -77,14 +79,23 @@ def draw_walls(game_state):
         # Calculate wall color based on the side of the wall
         wall_color = RED if side == 0 else WHITE
         floor_color = GREY
-        # Draw the wall segment
-        wall_start = (x, SCREEN_HEIGHT // 2 - line_height // 2)
-        wall_end = (x, SCREEN_HEIGHT // 2 + line_height // 2)
-        pygame.draw.line(game_state.screen, wall_color, wall_start, wall_end, 1)
 
-        floor_start = (x, SCREEN_HEIGHT // 2 + line_height // 2)
-        floor_end = (x, SCREEN_HEIGHT)
-        pygame.draw.line(game_state.screen, floor_color, floor_start, floor_end)
+        # Calculate the coordinates for the wall rectangle
+        rect_x = x
+        rect_height = line_height
+
+        # Calculate the offset value based on viewOffset and perp_wall_dist
+        perp_wall_dist = SCREEN_HEIGHT / line_height
+        offset_value = game_state.viewOffset * scale_multiplier(perp_wall_dist)
+
+        rect_y = SCREEN_HEIGHT // 2 - line_height // 2 + offset_value
+        rect_y_end = SCREEN_HEIGHT // 2 + line_height // 2 + offset_value
+
+        # Draw the wall rectangle
+        pygame.draw.rect(game_state.screen, wall_color, (rect_x, rect_y, wall_width, rect_height))
+
+        # Draw the floor rectangle
+        pygame.draw.rect(game_state.screen, floor_color, (rect_x, rect_y_end, wall_width, SCREEN_HEIGHT - rect_y_end))
 
 
 
@@ -103,7 +114,30 @@ def draw_minimap(game_state):
 
 
 def is_collision(x, y, game_state):
-    # Check if the player's next position collides with a wall or goes out of bounds
+    # Check if the offset position collides with a wall or goes out of bounds
     map_x = int(x)
     map_y = int(y)
-    return game_state.game_map[map_y][map_x] == 1 or map_x < 0 or map_x >= len(game_state.game_map[0]) or map_y < 0 or map_y >= len(game_state.game_map)
+    
+    return (
+        game_state.game_map[map_y][map_x] == 1 or
+        map_x < 0 or map_x >= len(game_state.game_map[0]) or
+        map_y < 0 or map_y >= len(game_state.game_map)
+    )
+
+
+def scale_multiplier(perp_distance):
+    scaled_value = math.sin(math.pi / 2 * min(1, perp_distance))
+    return scaled_value
+
+def draw_crosshair(game_state):
+    # Draw a crosshair in the center of the screen
+    crosshair_size = 10
+    crosshair_color = WHITE
+
+    # Horizontal line
+    pygame.draw.line(game_state.screen, crosshair_color, (SCREEN_WIDTH // 2 - crosshair_size, SCREEN_HEIGHT // 2),
+                     (SCREEN_WIDTH // 2 + crosshair_size, SCREEN_HEIGHT // 2), 2)
+    
+    # Vertical line
+    pygame.draw.line(game_state.screen, crosshair_color, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - crosshair_size),
+                     (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + crosshair_size), 2)
