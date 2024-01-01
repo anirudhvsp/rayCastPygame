@@ -121,8 +121,8 @@ class InputHandler:
         game_state.viewOffset = max(-VERTICAL_CLAMP, game_state.viewOffset)  # Clamp to -60.0
 
     def increaseRenderQuality(self, game_state):
-        game_state.RENDER_QUALITY += 0.5
-        game_state.RENDER_QUALITY = min(50, game_state.RENDER_QUALITY)
+        game_state.RENDER_QUALITY += 0.1
+        game_state.RENDER_QUALITY = min(64, game_state.RENDER_QUALITY)
     def decreaseRenderQuality(self, game_state):
-        game_state.RENDER_QUALITY -= 0.5
+        game_state.RENDER_QUALITY -= 0.1
         game_state.RENDER_QUALITY = max(1, game_state.RENDER_QUALITY)

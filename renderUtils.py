@@ -1,6 +1,7 @@
 import pygame
 import math
 from constants import SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_SPEED, ROTATION_SPEED, MOUSE_SENS, FOV,WHITE, BLACK, RED, GREY
+import numpy as np
 
 
 def cast_ray(ray_angle, game_state):
@@ -56,46 +57,64 @@ def cast_ray(ray_angle, game_state):
     # Calculate wall height on game_state.screen
     line_height = int(SCREEN_HEIGHT / perp_wall_dist)
 
-    return line_height, side
+    # Calculate value of wallX
+    if side == 0:
+        wall_x = game_state.player_pos[1] + perp_wall_dist * ray_dir[1]
+    else:
+        wall_x = game_state.player_pos[0] + perp_wall_dist * ray_dir[0]
+    wall_x -= math.floor(wall_x)
+
+    return line_height, side, wall_x
+
 
 
 def draw_walls(game_state):
-    wall_width = int(game_state.RENDER_QUALITY) # Width of the wall rectangles
+    wall_width = int(game_state.RENDER_QUALITY)
 
     for x in range(0, SCREEN_WIDTH, wall_width):
-        # Calculate ray angle for each column
-        camera_x = 2 * x / SCREEN_WIDTH - 1  # Normalize x-coordinate
+        camera_x = 2 * x / SCREEN_WIDTH - 1
         ray_dir_x = game_state.player_dir[0] + game_state.player_plane[0] * camera_x
         ray_dir_y = game_state.player_dir[1] + game_state.player_plane[1] * camera_x
-
-        # Angle of the ray with respect to player direction
+        ray_dir = [ray_dir_x, ray_dir_y]
         ray_angle = math.atan2(ray_dir_y, ray_dir_x)
         if ray_angle < 0:
             ray_angle += 2 * math.pi
 
-        # Cast the ray
-        line_height, side = cast_ray(ray_angle, game_state)
-
-        # Calculate wall color based on the side of the wall
-        wall_color = RED if side == 0 else WHITE
-        floor_color = GREY
-
-        # Calculate the coordinates for the wall rectangle
+        line_height, side, wall_x = cast_ray(ray_angle, game_state)
         rect_x = x
         rect_height = line_height
-
-        # Calculate the offset value based on viewOffset and perp_wall_dist
         perp_wall_dist = SCREEN_HEIGHT / line_height
         offset_value = game_state.viewOffset * scale_multiplier(perp_wall_dist)
-
         rect_y = SCREEN_HEIGHT // 2 - line_height // 2 + offset_value
         rect_y_end = SCREEN_HEIGHT // 2 + line_height // 2 + offset_value
 
-        # Draw the wall rectangle
-        pygame.draw.rect(game_state.screen, wall_color, (rect_x, rect_y, wall_width, rect_height))
+        tex_num = side
+        tex_width = game_state.textures[tex_num].get_width()
+        wall_x = game_state.player_pos[1] + perp_wall_dist * ray_dir[1] if side == 0 else game_state.player_pos[0] + perp_wall_dist * ray_dir[0]
+        wall_x -= math.floor(wall_x)
+        tex_x = int(wall_x * tex_width)
+        tex_x %= tex_width
+
+        if side == 0 and ray_dir[0] > 0 or side == 1 and ray_dir[1] < 0:
+            tex_x = tex_width - tex_x - 1
+
+        rect_y_int = int(rect_y)
+        rect_y_end_int = int(rect_y_end)
+
+        # Calculate the scaling factor based on line height
+        tex_scaling = game_state.textures[tex_num].get_height() / line_height
+
+        # Fetch the entire scaled column of colors from the texture
+        tex_colors = [game_state.textures[tex_num].get_at((tex_x, int((y - rect_y) * tex_scaling) % game_state.textures[tex_num].get_height())) for y in range(rect_y_int, rect_y_end_int)]
+
+        # Draw the entire column at once
+        wall_rect = pygame.Rect(rect_x, rect_y_int, wall_width, rect_y_end_int - rect_y_int)
+        for y, color in zip(range(rect_y_int, rect_y_end_int), tex_colors):
+            game_state.screen.set_at((rect_x, y), color)
 
         # Draw the floor rectangle
-        pygame.draw.rect(game_state.screen, floor_color, (rect_x, rect_y_end, wall_width, SCREEN_HEIGHT - rect_y_end))
+        pygame.draw.rect(game_state.screen, GREY, (rect_x, rect_y_end_int, wall_width, SCREEN_HEIGHT - rect_y_end_int))
+
 
 
 
@@ -141,3 +160,26 @@ def draw_crosshair(game_state):
     # Vertical line
     pygame.draw.line(game_state.screen, crosshair_color, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - crosshair_size),
                      (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + crosshair_size), 2)
+    
+
+
+def load_textures(texture_file):
+    # Load the texture file
+    texture_image = pygame.image.load(texture_file)
+
+    # Get the dimensions of each individual texture
+    texture_width, texture_height = 64, 64
+
+    # Number of textures in the texture file
+    num_textures = 8
+
+    # Create an array to store textures
+    textures = []
+
+    # Extract individual textures from the texture image
+    for i in range(num_textures):
+        texture = pygame.Surface((texture_width, texture_height))
+        texture.blit(texture_image, (0, 0), (i * texture_width, 0, texture_width, texture_height))
+        textures.append(texture.convert())
+
+    return textures
